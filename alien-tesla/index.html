@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./style/style.css" />
+    <script src="https://pixijs.download/release/pixi.min.js"></script>
+    <title>Document</title>
+
+    <script>
+      let app;
+      let alien;
+      let tesla;
+      let rockets = [];
+      let rocketSpeed = 10;
+
+      //   scene setup
+      window.onload = function () {
+        app = new PIXI.Application({
+          resolution: window.devicePixelRatio || 1,
+          antialias: true,
+          autoDensity: true,
+          backgroundColor: 0x1099bb,
+          target: document.body,
+          viewBox: [0, 0, 100, 100],
+          scaleMode: "fill",
+        });
+        app.renderer.view.style.position = "absolute";
+        app.renderer.view.style.display = "block";
+        app.renderer.autoDensity = true;
+        app.resizeTo = window;
+        document.querySelector("#gamePlayer").appendChild(app.view);
+
+        // interaction
+        app.stage.interactive = true;
+        app.stage.on("pointerdown", fireRocket);
+
+        // background scene
+        const background = PIXI.Sprite.from("./assets/world.jpg");
+        background.width = app.screen.width;
+        background.height = app.screen.height;
+        app.stage.addChild(background);
+
+        const style = new PIXI.TextStyle({
+          fontSize: 30,
+          fill: ["#ffffff"],
+          stroke: "#004620",
+        });
+
+        // adding text
+        const headerText = new PIXI.Text("Alien Boring Routine", style);
+        headerText.x = window.innerWidth / 12;
+        headerText.y = 20;
+        app.stage.addChild(headerText);
+
+        // alien spaceship
+        alien = PIXI.Sprite.from("./assets/alien.png");
+        alien.scale.x = 0.3;
+        alien.scale.y = 0.3;
+        alien.x = 0.2 * window.innerWidth;
+        alien.y = 0.7 * window.innerHeight;
+        app.stage.addChild(alien);
+
+        //   target Tesla
+        tesla = new PIXI.Sprite.from("./assets/tesla.png");
+        tesla.scale.x = 0.15;
+        tesla.scale.y = 0.15;
+
+        var sec = 0;
+        var movement = () => {
+          sec++;
+          t = sec / 8;
+          var positionY = 100 * Math.sin(t);
+          var positionX = 30 * Math.cos(t);
+          // tesla.y = 0.5 * window.innerHeight + positionY;
+          tesla.y = 0.5 * window.innerHeight;
+          // tesla.y = 0.5 * window.innerHeight + positionY;
+          tesla.x = 0.7 * window.innerWidth;
+        };
+        var movementRenderer = setInterval(movement, 100);
+        app.stage.addChild(tesla);
+
+        // PointerTracking
+        app.view.addEventListener("pointermove", (e) => {
+          console.log(e);
+          alien.x = e.clientX;
+          alien.y = e.clientY;
+        });
+
+        // ticker
+        app.ticker.add(gameLoop);
+
+        function keyboard(value) {
+          const key = {};
+          key.value = value;
+          key.isDown = false;
+          key.isUp = true;
+          key.press = undefined;
+          key.release = undefined;
+          //The `downHandler`
+          key.downHandler = (event) => {
+            if (event.key === key.value) {
+              if (key.isUp && key.press) {
+                key.press();
+              }
+              key.isDown = true;
+              key.isUp = false;
+              event.preventDefault();
+            }
+          };
+
+          //The `upHandler`
+          key.upHandler = (event) => {
+            if (event.key === key.value) {
+              if (key.isDown && key.release) {
+                key.release();
+              }
+              key.isDown = false;
+              key.isUp = true;
+              event.preventDefault();
+            }
+          };
+
+          //Attach event listeners
+          const downListener = key.downHandler.bind(key);
+          const upListener = key.upHandler.bind(key);
+
+          window.addEventListener("keydown", downListener, false);
+          window.addEventListener("keyup", upListener, false);
+
+          // Detach event listeners
+          key.unsubscribe = () => {
+            window.removeEventListener("keydown", downListener);
+            window.removeEventListener("keyup", upListener);
+          };
+
+          return key;
+        }
+
+        //keyboard event
+        const right = keyboard("ArrowRight");
+        right.press = () => {
+          console.log("press");
+          fireRocket();
+        };
+      };
+
+      function fireRocket(e) {
+        // console.log("fire");
+        let rocket = createRocket();
+        rockets.push(rocket);
+      }
+
+      function createRocket() {
+        let rocket = new PIXI.Sprite.from("./assets/rocket.png");
+        // rocket.anchor.set(0.5);
+        rocket.x = alien.x;
+        rocket.y = alien.y;
+        rocket.speed = rocketSpeed;
+        app.stage.addChild(rocket);
+
+        return rocket;
+      }
+
+      function updateRockets(delta) {
+        for (let i = 0; i < rockets.length; i++) {
+          rockets[i].position.x += rockets[i].speed;
+        }
+      }
+
+      // rocket impact
+      function rocketImpact(delta) {
+        for (let i = 0; i < rockets.length; i++) {
+          targetX = tesla.x;
+          targetY = tesla.y;
+          rocketPathY = rockets[i].position.y;
+          rocketPathX = rockets[i].position.x;
+
+          // console.log(targetY, rocketPathY);
+
+          if (rocketPathY < targetY + 50 && rocketPathY > targetY - 50) {
+            if (rocketPathX > targetX) {
+              console.log("hit");
+            }
+          }
+        }
+      }
+
+      function gameLoop(delta) {
+        updateRockets(delta);
+        rocketImpact(delta);
+        // randomTesla(delta);
+      }
+    </script>
+  </head>
+  <body>
+    <div id="gamePlayer"></div>
+  </body>
+</html>
